@@ -1,9 +1,4 @@
-;; TO DO
-;; also keep track of and plot how central women are and how many friends they have
-;; add preferential attachment
-
-;; hiring?  assume existing proportion is hired?
-;; MIN_PAGERANK to stay in company/industry
+;; TO DO: also keep track of and plot how central women are and how many friends they have
 
 globals
 [
@@ -248,13 +243,13 @@ end
 ;; Adapted from Uri Wilensky (2007).
 @#$#@#$#@
 GRAPHICS-WINDOW
-383
-10
-802
-450
+337
+12
+888
+584
 200
 200
-1.02
+1.35
 1
 10
 1
@@ -334,7 +329,7 @@ percent-new-women
 percent-new-women
 0.0
 100.0
-30
+25
 1.0
 1
 %
@@ -351,10 +346,10 @@ Proportion of newcomers who are women
 1
 
 PLOT
-826
+899
 10
 1239
-253
+197
 % Industry Female
 Time
 % Women
@@ -369,30 +364,15 @@ PENS
 "default" 1.0 0 -16777216 true "" "plotxy ticks (percent-women)"
 
 SLIDER
-603
-467
-802
-500
+11
+126
+210
+159
 companies
 companies
 0
-100
-11
-1
-1
-NIL
-HORIZONTAL
-
-SLIDER
-604
-512
-802
-545
-company-size
-company-size
-1
-100
-16
+15
+10
 1
 1
 NIL
@@ -400,14 +380,29 @@ HORIZONTAL
 
 SLIDER
 12
-211
+171
+210
+204
+company-size
+company-size
+1
+50
+15
+1
+1
+NIL
+HORIZONTAL
+
+SLIDER
+12
+304
 273
-244
+337
 accept-other
 accept-other
 0
 1
-0.15
+0.3
 0.01
 1
 NIL
@@ -415,9 +410,9 @@ HORIZONTAL
 
 TEXTBOX
 14
-191
+284
 324
-209
+302
 Likelihood initiate friendship with OTHER gender
 11
 0.0
@@ -425,9 +420,9 @@ Likelihood initiate friendship with OTHER gender
 
 TEXTBOX
 14
-129
+222
 320
-147
+240
 Likelihood initiate friendship with SAME gender
 11
 0.0
@@ -435,14 +430,14 @@ Likelihood initiate friendship with SAME gender
 
 SLIDER
 12
-148
+241
 272
-181
+274
 accept-same
 accept-same
 0
 1
-0.4
+0.7
 0.01
 1
 NIL
@@ -450,34 +445,34 @@ HORIZONTAL
 
 TEXTBOX
 14
-255
-252
-273
-Minimum friendships to stay in industry
+352
+282
+380
+Minimum friendships needed to stay in industry
 11
 0.0
 1
 
 SLIDER
 13
-275
+370
 272
-308
+403
 friends-needed
 friends-needed
 0
 20
-2
+5
 1
 1
 NIL
 HORIZONTAL
 
 PLOT
-11
-380
-373
-588
+898
+201
+1238
+409
 Links
 Time
 Links
@@ -496,14 +491,14 @@ PENS
 
 SLIDER
 13
-336
+435
 271
-369
+468
 delete-link
 delete-link
 0
 1
-0.08
+0.1
 0.01
 1
 NIL
@@ -511,19 +506,19 @@ HORIZONTAL
 
 TEXTBOX
 16
-316
-185
-334
-Likelihood a link will be deleted
+416
+266
+444
+Proportion of links deleted at each time step
 11
 0.0
 1
 
 PLOT
-820
-289
-1241
-564
+897
+412
+1238
+599
 Mean Links
 Time
 Mean Links
@@ -539,25 +534,25 @@ PENS
 "Men" 1.0 0 -13345367 true "" "plotxy ticks mean-mens-links"
 
 SLIDER
-393
-468
-591
-501
+15
+483
+213
+516
 page-rank-importance
 page-rank-importance
 0
 1
-0.93
+0.5
 0.01
 1
 NIL
 HORIZONTAL
 
 SLIDER
-393
-512
-571
-545
+15
+527
+193
+560
 friends-importance
 friends-importance
 0
@@ -569,10 +564,10 @@ NIL
 HORIZONTAL
 
 CHOOSER
-393
-553
-485
-598
+227
+483
+319
+528
 size-by
 size-by
 "none" "friends" "page rank"

@@ -1,14 +1,17 @@
-;; TO DO: also keep track of and plot how central women are and how many friends they have
+;; write Info
 
 globals
 [
   MAX-NOISE
   BASE-SIZE
-  current-is-woman
+  MAX-COMPANIES
+  TURTLE-SPACE
   current-company
   current-company-size
   company-xcor
   company-ycor
+  company-x-coords
+  company-y-coords
   total-women
   total-men
   percent-women
@@ -18,8 +21,6 @@ globals
   mean-mens-links
   max-rank
   min-rank
-  company-x-coords
-  company-y-coords
   max-friends
   min-friends
 ]
@@ -31,9 +32,11 @@ turtles-own
   random-x        ;; random noise to add to turtle's x coordinate, ranging from -10 to 10
   random-y        ;; random noise to add to turtle's y coordinate, ranging from -10 to 10
   rank            ;; for the page-rank diffusion approach
-  new-rank
+  new-rank        ;; to calculate page rank
   scaled-page-rank ;; page rank scaled to be between 0 and 1
-  scaled-friends
+  scaled-friends  ;; number of friends scaled to be between 0 and 1
+  companies-worked ;; number of companies turtle has been a part of
+  failed-attempts ;; current number of failed friendship attempts
 ]
 
 
@@ -41,82 +44,79 @@ turtles-own
 ;;; Setup Procedures ;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;
 
+
 to make-turtle
   create-turtles 1
   [
-    set current-is-woman random-float 100 < percent-new-women
-    set woman? current-is-woman
-    set color ifelse-value current-is-woman [red] [blue]
+    set size BASE-SIZE
+    set companies-worked 1
+    let this-is-woman random 100 < percent-new-women
+    set woman? this-is-woman
+    set color ifelse-value this-is-woman [red] [blue]
     set my-company current-company
     set random-x ((random-float (2 * MAX-NOISE)) - MAX-NOISE)
     set random-y ((random-float (2 * MAX-NOISE)) - MAX-NOISE)
     set xcor company-xcor + random-x
     set ycor company-ycor + random-y
+    set failed-attempts 0
     set scaled-page-rank 1
     set scaled-friends 1
   ]
 end
 
 
-to make-links
+to update-friends-counts
   set min-friends (min [count my-links] of turtles)
   set max-friends (max [count my-links] of turtles)
 
-  ;; Destroy some existing links - before calculating other things
   ask turtles [
-    ask my-links [
-      if random-float 1 < delete-link [die]
+    ifelse (max-friends - min-friends = 0) [
+      set scaled-friends 1
+    ] [
+    set scaled-friends (((count my-links - min-friends) / (max-friends - min-friends)))
     ]
   ]
+end
 
-  if (page-rank-importance > 0) [
-    update-page-rank
-  ]
-    
+
+
+to make-links
   ask turtles [
-    set current-company my-company
-    set current-is-woman woman?
-    
-    if (friends-importance > 0) [
-      ifelse (max-friends - min-friends = 0) [
-        set scaled-friends 1
-      ] [
-      set scaled-friends (((count my-links - min-friends) / (max-friends - min-friends)))
+    let this-company my-company
+    let this-is-woman woman?
+
+    ;; Randomly choose one turtle in same company to be friends
+    let made-friend false
+    let potential-friend one-of other turtles with [not link-neighbor? myself and (my-company = this-company) ]
+    if potential-friend != nobody [
+      ask potential-friend [
+        if (woman? = this-is-woman and random-float 1 < accept-same) [
+          create-link-with myself [ set color ifelse-value (this-is-woman = true) [red] [blue] ]
+          set made-friend true
+        ]
+        if (woman? != this-is-woman and random-float 1 < accept-other) [
+          create-link-with myself [set color violet]
+          set made-friend true
+        ]
       ]
     ]
-    
-    ;; Create same-gender links
-    ask other turtles with [not link-neighbor? myself and (my-company = current-company and woman? = current-is-woman) ] [
-      if (random-float 1 < accept-same and
-        random-float 1 < ((scaled-page-rank * page-rank-importance) + (1 - page-rank-importance)) and
-        random-float 1 < ((scaled-friends * friends-importance) + (1 - friends-importance))) [
-          create-link-with myself [ set color ifelse-value (current-is-woman = true) [red] [blue] ]
-        ]
-    ]
-    
-    ;; Create other-gender links
-    ask other turtles with [not link-neighbor? myself and (my-company = current-company and woman? != current-is-woman) ] [
-      if (random-float 1 < accept-other and
-        random-float 1 < ((scaled-page-rank * page-rank-importance) + (1 - page-rank-importance)) and
-        random-float 1 < ((scaled-friends * friends-importance) + (1 - friends-importance))) [
-          create-link-with myself [set color violet]
-        ]
+    if (made-friend = false) [
+      set failed-attempts (failed-attempts + 1)
     ]
   ]
 end
 
 
 to make-company
-  set current-company (current-company + 1)
-  ;; check that x- and y- coordinates do not overlap with another company's
+  ;; check that x- and y-coordinates do not overlap with another company's
   let bad-coordinates true
   while [bad-coordinates] [
     set bad-coordinates false
     set company-xcor random-xcor
     set company-ycor random-ycor
     ;; check that the company coordinates + noise will always be within the screen
-    while [company-xcor >= (max-pxcor - MAX-NOISE) or company-xcor <= (min-pxcor + MAX-NOISE) or
-        company-ycor >= (max-pycor - MAX-NOISE) or company-ycor <= (min-pycor + MAX-NOISE)] [
+    while [company-xcor >= (max-pxcor - MAX-NOISE - TURTLE-SPACE) or company-xcor <= (min-pxcor + MAX-NOISE + TURTLE-SPACE) or
+        company-ycor >= (max-pycor - MAX-NOISE - TURTLE-SPACE) or company-ycor <= (min-pycor + MAX-NOISE + TURTLE-SPACE)] [
         set company-xcor random-xcor
         set company-ycor random-ycor
     ]
@@ -124,7 +124,7 @@ to make-company
     while [index < length company-x-coords] [
       let other-x (item index company-x-coords)
       let other-y (item index company-y-coords)
-      ;; check that the company coordinates do not overlap with any other company's
+      ;; check that the company coordinates do not overlap with any other company's (need 2 *, but giving extra space)
       if (other-x <= company-xcor + (3 * MAX-NOISE) and other-x >= company-xcor - (3 * MAX-NOISE) and
         other-y <= company-ycor + (3 * MAX-NOISE) and other-y >= company-ycor - (3 * MAX-NOISE)) [
         set bad-coordinates true
@@ -137,52 +137,6 @@ to make-company
   repeat company-size [ make-turtle ]
 end
 
-
-;;;;;;;;;;;;;;;;;;;;;;;
-;;; Main Procedures ;;;
-;;;;;;;;;;;;;;;;;;;;;;;
-
-to go
-  ask turtles [
-    if count link-neighbors < friends-needed [
-      die
-    ]
-  ]
-  
-  if count turtles = 0 [stop]
-
-  make-links
-
-  set total-women (count turtles with [woman? = true])
-  set total-men (count turtles with [woman? = false])
-  ifelse count turtles = 0 [set percent-women 0] [set percent-women ((total-women / (count turtles)) * 100)]
-  
-  set womens-links 0
-  ask turtles with [woman? = true] [
-    set womens-links (womens-links + count my-links)
-  ]
-  ifelse total-women = 0 [set mean-womens-links 0] [set mean-womens-links (womens-links / total-women)]
-
-  set mens-links 0
-  ask turtles with [woman? = false] [
-    set mens-links (mens-links + count my-links)
-  ]
-  ifelse total-men = 0 [set mean-mens-links 0] [set mean-mens-links (mens-links / total-men)]
-  
-  ;; Update turtle size
-  ask turtles [
-    if (size-by = "none") [
-      set size BASE-SIZE
-    ]
-    if (size-by = "friends") [
-      set size BASE-SIZE * scaled-friends
-    ]
-    if (size-by = "page rank") [
-      set size BASE-SIZE * scaled-page-rank
-    ]
-  ]
-  tick
-end
 
 to update-page-rank
   let damping-factor 0.85
@@ -223,19 +177,114 @@ to update-page-rank
 end
 
 
+to calculate-outcomes
+  update-friends-counts
+  update-page-rank
+
+  set total-women (count turtles with [woman? = true])
+  set total-men (count turtles with [woman? = false])
+  ifelse count turtles = 0 [set percent-women 0] [set percent-women ((total-women / (count turtles)) * 100)]
+  
+  set womens-links 0
+  ask turtles with [woman? = true] [
+    set womens-links (womens-links + count my-links)
+  ]
+  ifelse total-women = 0 [set mean-womens-links 0] [set mean-womens-links (womens-links / total-women)]
+
+  set mens-links 0
+  ask turtles with [woman? = false] [
+    set mens-links (mens-links + count my-links)
+  ]
+  ifelse total-men = 0 [set mean-mens-links 0] [set mean-mens-links (mens-links / total-men)]
+end
+
+
+to replace-turtle
+  let this-is-woman random 100 < percent-new-women
+  set woman? this-is-woman
+  set color ifelse-value this-is-woman [red] [blue]
+  ask my-links [ die ]
+  set failed-attempts 0
+end
+
+
+;;;;;;;;;;;;;;;;;;;;;;;
+;;; Main Procedures ;;;
+;;;;;;;;;;;;;;;;;;;;;;;
+
+
+to go
+  make-links
+
+  ask turtles [
+    ;; Replace old turtles by assigning them new gender and dropping links
+    ;; If you keep failing to find friends, find another company or leave the industry and be replaced
+    if (failed-attempts = max-failed-attempts) [
+      ifelse (companies-worked = MAX-COMPANIES) [ replace-turtle ] [
+        ;; drop existing links
+        ask my-links [die]
+        ;; find new company
+        let new-company (random companies)
+        while [my-company = new-company] [
+          set new-company (random companies)
+        ]
+        set my-company new-company
+        set company-xcor (item new-company company-x-coords)
+        set company-ycor (item new-company company-y-coords)
+        set random-x ((random-float (2 * MAX-NOISE)) - MAX-NOISE)
+        set random-y ((random-float (2 * MAX-NOISE)) - MAX-NOISE)
+        set xcor company-xcor + random-x
+        set ycor company-ycor + random-y
+        set size BASE-SIZE
+        set failed-attempts 0
+        set companies-worked (companies-worked + 1)
+      ]
+    ]
+
+    ;; Update turtle size
+    if (size-by = "none") [
+      set size BASE-SIZE
+    ]
+    if (size-by = "friends") [
+      ;;set size BASE-SIZE * scaled-friends
+      set size BASE-SIZE * 0.5 * sqrt (count my-links)
+    ]
+    if (size-by = "page rank") [
+      set size BASE-SIZE * sqrt scaled-page-rank
+    ]
+  ]
+  
+  if (count turtles < 2) [
+    clear-all
+    stop
+  ]
+  calculate-outcomes
+  tick
+end
+
+
 to setup
   clear-all
-  set-default-shape turtles "circle"
-  set percent-women percent-new-women
+  set-default-shape turtles "person"
+  set MAX-COMPANIES 3
+  set MAX-NOISE 25
+  if (size-by = "none") [ set BASE-SIZE 10 ]
+  if (size-by = "friends") [ set BASE-SIZE 10 ]
+  if (size-by = "page rank") [ set BASE-SIZE 20 ]
+  ;; space to leave around edges of board in case turtles get big
+  set TURTLE-SPACE 20
 
-  ;; create the companies
+  ;; Create the companies
   set company-x-coords (list)
   set company-y-coords (list)
   set current-company 0
-  set MAX-NOISE 25
-  set BASE-SIZE 10
-  repeat companies [ make-company ]
-  make-links
+  repeat companies [
+    make-company
+    set current-company (current-company + 1)
+  ]
+  set min-friends 0
+  set max-friends 0
+  set percent-women percent-new-women
   
   reset-ticks
 end
@@ -329,7 +378,7 @@ percent-new-women
 percent-new-women
 0.0
 100.0
-25
+30
 1.0
 1
 %
@@ -340,7 +389,7 @@ TEXTBOX
 64
 285
 82
-Proportion of newcomers who are women
+Percent of incoming employees who are women
 11
 0.0
 1
@@ -352,16 +401,17 @@ PLOT
 197
 % Industry Female
 Time
-% Women
+% Employees
 0.0
 10.0
 0.0
 100.0
 true
-false
+true
 "" ""
 PENS
-"default" 1.0 0 -16777216 true "" "plotxy ticks (percent-women)"
+"Women" 1.0 0 -2674135 true "" "plotxy ticks (percent-women)"
+"Incoming Women" 1.0 0 -7500403 true "" "plotxy ticks percent-new-women"
 
 SLIDER
 11
@@ -371,8 +421,8 @@ SLIDER
 companies
 companies
 0
-15
 10
+5
 1
 1
 NIL
@@ -386,34 +436,34 @@ SLIDER
 company-size
 company-size
 1
-50
-15
+60
+30
 1
 1
 NIL
 HORIZONTAL
 
 SLIDER
-12
-304
-273
-337
+13
+310
+274
+343
 accept-other
 accept-other
 0
 1
-0.3
+0.2
 0.01
 1
 NIL
 HORIZONTAL
 
 TEXTBOX
-14
-284
-324
-302
-Likelihood initiate friendship with OTHER gender
+15
+290
+325
+308
+Probability different-gender friendship succeeds
 11
 0.0
 1
@@ -423,7 +473,7 @@ TEXTBOX
 222
 320
 240
-Likelihood initiate friendship with SAME gender
+Probability same-gender friendship succeeds
 11
 0.0
 1
@@ -443,37 +493,12 @@ accept-same
 NIL
 HORIZONTAL
 
-TEXTBOX
-14
-352
-282
-380
-Minimum friendships needed to stay in industry
-11
-0.0
-1
-
-SLIDER
-13
-370
-272
-403
-friends-needed
-friends-needed
-0
-20
-5
-1
-1
-NIL
-HORIZONTAL
-
 PLOT
 898
 201
 1238
 409
-Links
+Total Friendships
 Time
 Links
 0.0
@@ -490,26 +515,26 @@ PENS
 "Total" 1.0 0 -16777216 true "" "plotxy ticks (count links)"
 
 SLIDER
-13
-435
-271
-468
-delete-link
-delete-link
+14
+398
+272
+431
+max-failed-attempts
+max-failed-attempts
 0
+20
+5
 1
-0.1
-0.01
 1
 NIL
 HORIZONTAL
 
 TEXTBOX
 16
-416
-266
-444
-Proportion of links deleted at each time step
+365
+329
+393
+Consecutive unsuccessful friendship attempts before leave company
 11
 0.0
 1
@@ -519,7 +544,7 @@ PLOT
 412
 1238
 599
-Mean Links
+Average Friendships
 Time
 Mean Links
 0.0
@@ -533,99 +558,61 @@ PENS
 "Women" 1.0 0 -2674135 true "" "plotxy ticks mean-womens-links"
 "Men" 1.0 0 -13345367 true "" "plotxy ticks mean-mens-links"
 
-SLIDER
-15
-483
-213
-516
-page-rank-importance
-page-rank-importance
-0
-1
-0.5
-0.01
-1
-NIL
-HORIZONTAL
-
-SLIDER
-15
-527
-193
-560
-friends-importance
-friends-importance
-0
-1
-0
-0.01
-1
-NIL
-HORIZONTAL
-
 CHOOSER
-227
-483
-319
-528
+14
+452
+106
+497
 size-by
 size-by
 "none" "friends" "page rank"
-2
+1
 
 @#$#@#$#@
 ## WHAT IS IT?
-
+This is an abstract model of workplace friendships and satisfaction.  The central questions it addresses is how initial imbalances combine with homophily to shape company dynamics and inequality.
 
 ## HOW IT WORKS
 
-Choose the number and size of small and large companies.  Men and women are distributed randomly across companies, with percent-new-women of them being women, and the rest being men.
+At each time step, each person tries to make one friend.  They randomly select a co-worker and ask them to be friends.  Depending on their genders, the friendship succeeds with the probability for same-gender friendships (accept-same) or with that for different-gender friendships (accept-other).
 
-At each point in time, employees form friendships and abandon old ones.  Employees who feel they have too few friends (less than min-friends) leave the industry.
+People who fail to make friends with anyone else for max-failed-attemps consecutive attempts switch companies.  If they have already worked at 3 companies, they leave the industry and are replaced by a new employee.
 
 ## HOW TO USE IT
 
-Click the SETUP button to start with the specified number of companies.  Click GO ONCE to go one time step.  Click GO to indefinitely observe employee behavior.
+First, choose the number and size of companies.  Men and women are distributed randomly across companies, with percent-new-women of them being women, and the rest being men.
 
-### Visualization Controls
-- show-page-rank: switches on and off whether nodes are sized by page rank.
+Click the SETUP button to build the world.  Click GO ONCE to go one time step.  Click GO to indefinitely observe employee behavior.
 
 ### Parameters
-- PERCENT-NEW-WOMEN: the proportion of incoming employees who are women.
-- SMALL-COMPANY-SIZE: the number of people in a small company.  
-- SMALL-COMPANIES: the number of small companies.
-- LARGE-COMPANY-SIZE: the number of people in a large company.  
-- LARGE-COMPANIES: the number of large companies.
+**percent-new-women**: the proportion of incoming employees who are women.  Every time a new employee joins, they are this percent likely to be a woman.
+**companies**: the number of companies.
+**company-size**: the number of people in each company.
+**accept-same** probability that an attempted same-gender friendship succeeds.
+**accept-other** probability that an attempted different-gender friendship succeeds.
+**max-failed-attemps** consecutive failed friendship attempts before a person switches companies. If they have already worked at 3 companies, they leave the industry and are replaced by a new employee.
+
+### Visualization Controls
+**size-by**: size nodes by their page rank, number of friends, or neither.
 
 ### Plots
-- MEAN LINKS: men and women's average number of links over time.
+- % Industry Female: the percentage of employees in the industry who are women over time.
 
-- % INDUSTRY WOMEN: plots the percentage of employees in the industry who are women over time.
+- Total Friendships: counts of different types of friendships.
 
-- LINK COUNTS: plots a stacked histogram of the number of links in the companies over time.  The colors correspond to collaboration ties as follows:  
--- Red: Woman-to-woman 
--- Blue: Man-to-man
--- Purple: Woman-to-man 
-
-## THINGS TO NOTICE
-
-The sky, flowers, your family.
+- Average friendships: men and women's average number of friends over time.
 
 ## THINGS TO TRY
 
-Vary the percentage of new employees who are women (percent-new-women).
+Vary the parameters and observe how many and what types of links form.  See how employee turnover changes.  Do you ever observe gender segregation across companies?
 
-## EXTENDING THE MODEL
+I am particularly struck by how few woman-woman links there are when women are not in the majority.
 
-Can you achieve gender equality?
+Also notice how the percentage of industry employees who are women is continually replenished by incoming employees, dipping down and then returning to about percent-new-women.  Imagine how quickly this would fall if the percentage of new employees that are female was impacted by the percentage of current employees who are female (e.g., because people look up to role models).
 
-## RELATED MODELS
+## POSSIBLE EXTENSIONS
+You could have employees switch companies if they have many fewer friends than their co-workers, or if their moving average number of failures dips below a certain threshold.
 
-Team Building
-
-Preferential Attachment - gives a generative explanation of how general principles of attachment can give rise to a network structure common to many technological and biological systems.
-
-Giant Component - shows how critical points exist in which a network can transition from a rather disconnected topology to a fully connected topology
 
 ## CREDITS AND REFERENCES
 
@@ -641,7 +628,7 @@ http://amaral.northwestern.edu/Publications/Papers/Guimera-2005-Science-308-697.
 
 If you mention this model in a publication, we ask that you include these citations for the model itself and for the NetLogo software:
 
-* Roesler, K. 2017. Industry Gender Dynamics. http://kroesler.com/netlogo/gender_industry.html.
+* Roesler, K. 2017. Industry Gender Dynamics. http://netlogoweb.org/web?https://raw.githubusercontent.com/roesler-stan/NetLogo/master/gender_industry.nlogo.
 
 * Wilensky, U. 1999. NetLogo. http://ccl.northwestern.edu/netlogo/. Center for Connected Learning and Computer-Based Modeling, Northwestern University, Evanston, IL.
 

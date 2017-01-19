@@ -1,0 +1,172 @@
+https://www.openabm.org/model/4744/version/1/view
+
+## WHAT IS IT?
+## 
+(a general understanding of what the model is trying to show or explain)
+
+The Ethno-Cultural Tag artificial society model (ECT) is a variation of
+cooperation producing tag models.
+
+Full details can be found at: http://cfpm.org/discussionpapers/152 (by
+Nov. 2015)
+
+Ethnocentrism denotes behaviour and beliefs that are positive towards
+those who share the same ethnicity and negative towards others. The
+model considers short-term cultural evolution, where agents may interact
+in a population and do not die or give birth but imitate and innovate
+their behaviours. While agents retain a fixed ethnicity they have the
+ability to form and join cultural groups and to change how they define
+their in-group based on both ethnic and cultural markers (or tags).
+
+Over a range of parameters cultural identity rather than ethnocentrism
+becomes the dominant way that agents identify their in-group producing
+high levels of positive interaction both within and between ethnicities.
+
+However, in some circumstances, cultural markers of group preference are
+supplemented by ethnic markers. In other words, whilst pure
+ethnocentrism (based only on ethnic identity) is not sustained, groups
+that discriminate in terms of a combination of cultural and ethnic
+identities do occur.
+
+In these less common cases, high levels of ethnocentric behaviours
+evolve and persist – even though the ethnic markers are arbitrary and
+fixed. Furthermore, cooperative ethnocentric groups do not emerge in the
+absence of cultural processes. The latter suggests the hypothesis that
+observed ethnocentrism in observed societies need not be the result of
+long-term historical processes based upon ethnic markers but could be
+more dependent upon short run cultural ones.
+
+
+## HOW IT WORKS
+## 
+(what rules the agents use to create the overall behavior of the model)
+
+Agents play a donation game - in which they decide if to unconditionally
+help another agent (donate) or not (shirk). Donation incurs a cost
+(parameter) and produces a benefit (parameter) to the receiver. From
+this agents accumulate a payoff.
+
+The donation rate (dr) is the proportion of games that result in such
+help. The inter-ethnic donation rate (ie) is the proportion of donations
+made that are made between agents with different ethnicities.
+
+Agents store a cultural tag, an ethnic marker, a strategy and an
+in-group selector. The tag, strategy and selector are culturally learned
+(evolve) through imitation (replication) and innovation (mutation).
+Agents imitate those who perform better than themselves in terms of
+payoff. The ethnic marker is fixed and never changes.
+
+The selector takes one of four values defining the in-group as either:
+1) shared ethnic marker (se); 2) shared cultural tag (sc); 3) both (sb)
+or 4) none (sn). The strategy takes one of four values either: 1) shirk
+on all (ss); 2) donate to all (dd); 3) donate to in-group, shirk on
+out-group (ds); 4) shirk on in-group, donate to out-group (sd). Tags
+take one of number-of-tags (parameter) values.
+
+Agents select game partners within their in-group (with probability
+GIGB). They select others to imitate (learn from) within their in-group
+(with probability LIGB). When GIGB = LIGB = 0 then agents interact with
+the entire population. When GIGB = LIGB = 1 then agents only play games
+or learn from agents within their in-group (as defined by their current
+selector).
+
+The model iterates through:
+
+Interaction phase (agents play games with each other) Imitation phase
+(agents imitate from those who got higher payoffs than themselves)
+Innovation phase (agents probabilistically randomly mutate their tag,
+strategy and selector)
+
+## HOW TO USE IT
+## 
+(how to use the model, including a description of each of the items in
+the Interface tab)
+
+Press SETUP to initialise the population. Press "GO" to start the model
+interations. Press GO again to stop the model.
+
+Statistics are displayed showing the proportion of: donations (dr),
+inter-ethnic donations (ie) and each of the strategy (ss, sd, ds, dd)
+and selector (sn, sc, se, sn) types in the population. You can see how
+they evolve over time.
+
+The grid visualises the agents by putting them on a ring stacked. The
+position on the ring indicates the agent tag value. The hight of the
+stack indicates how many agents share the tag (i.e. the size of the
+cultural group). The colours indicate the strategy type of the agent.
+
+## THINGS TO NOTICE
+## 
+Either sc or sb selector tend dominate often competing and changing
+places as dominant in-group selector. Strategy ds tends to dominate
+meaning agents learn to only donate to their in-group. Tag groups
+constantly form and decay producing a cooperative ecology of cultural
+groups.
+
+Notice that pure ethnic in-group selectors (se) rarely gain any
+signficant hold in the population meaning that agents do not define
+their in-groups solely with reference to the ethnic marker.
+
+## THINGS TO TRY
+## 
+Try increasing and reducing the number of agents. How does this effect
+the dynamics of groups and donation rate (dr)?
+
+Changing the GIGB and LIGB values often produces radically different
+behaviour. Donation (dr) is highest when GIGB = 1 and LIGB = 0 (meaning
+play games only with in-group but learn from everyone).
+
+What happens when the number-of-tags is reduced so it's less than the
+number of agents? Why? Note: you can increase and decrease the
+number-of-tags while the simulation is running - you don't need to
+restart the simulation.
+
+Notice also that mutation rates on the tag have to be >> mutation on the
+strategy to create high cooperation. This is because it allows for
+cooperative new cultural groups (containing DS agents) to be created
+more quickly than they are dissolved (due to being invaded by shirkers
+through innovation of agent strategies).
+
+## EXTENDING THE MODEL
+## 
+The model could be extended by:
+
+- Changing the game so agents could chose to punish as well as donate or
+shirk. Punishment would incur both a cost to the punisher and the
+punished. Would agents learn to punish their out-groups?
+
+- Placing agents in space or network and modify interaction rules to
+bias interaction towards neighbours
+
+- Incorporating movement / network rewiring to create a dynamic social
+structure
+
+- Dynamically changing to number of ethnicities in the population
+through introduction of new agents into the population over time
+
+## RELATED MODELS
+## 
+Hales, D. (1998) Stereotyping, Groups and Cultural Evolution: A Case of
+"Second Order Emergence"? In Sichman, J., Conte, R., & Gilbert, N.
+(Eds.) Multi-Agent Systems and Agent-Based Simulation. Lecture Notes in
+Artificial Intelligence 1534. Berlin: Springer-Verlag
+
+Hales, D. (2001) Cooperation without memory or space: Tags, groups and
+the prisoner's dilemma. In S. Moss & P. Davidsson (Eds.),
+Multi-Agent-Based Simulation, 1979, 157-166.
+
+Hammond, R. & Axelrod, R. (2006). The Evolution of Ethnocentrism.
+Journal of Conflict Resolution, December 2006, 50: 926-936,
+doi:10.1177/0022002706293470
+
+See built-in netlogo model library: sample models/social
+science/ethnocentrism
+
+## CREDITS AND REFERENCES
+## 
+Full details of the model and results can be found in:
+
+Hales, D. & Edmonds, B. (2015) Culture trumps ethnicity! –
+Intra-generational cultural evolution and ethnocentrism in an artificial
+society. Centre for Policy Modelling Discussion Paper CPM 15-226,
+Manchester, UK. http://cfpm.org/discussionpapers/152 (by Nov. 2015)

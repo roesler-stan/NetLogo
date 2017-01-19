@@ -437,7 +437,7 @@ company-size
 company-size
 1
 60
-20
+10
 1
 1
 NIL

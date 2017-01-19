@@ -1,0 +1,25 @@
+Q: How much randomness is needed to eventually overcome initial inequality?
+
+IV’s
+	initial inequality - parents have HS -> 90% vs. 50%
+	(random chance (disease, intelligence) - you don’t graduate)
+	bias - black kids don’t graduate
+	affirmative action - black kids graduate +X%
+	(intermarriage)
+
+20% black - 50% parents have HS
+80% white - 80% parents have HS
+
+
+
+E.g. slavery -> income inequality
+Some random distribution, but usually education and income are the same between parents and children (check correlation)
+	Ask Max about numbers?
+
+outcomes:
+	meritocracy (hard work -> rewards)
+	new chances (initial disadvantage -> eventual mobility)
+
+network ties
+initial income -> education -> knowledge + degree -> job
+interracial/inter-class marriages

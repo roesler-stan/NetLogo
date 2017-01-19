@@ -437,7 +437,7 @@ company-size
 company-size
 1
 60
-30
+20
 1
 1
 NIL
@@ -566,7 +566,7 @@ CHOOSER
 size-by
 size-by
 "none" "friends" "page rank"
-1
+2
 
 @#$#@#$#@
 ## WHAT IS IT?
